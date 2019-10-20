@@ -3,13 +3,22 @@ import config
 from datetime import datetime, timedelta
 import mytodoist as mt
 import mystrings as s
+import os 
+
+def parse_commandline(default_start, default_end):
+    parser = argparse.ArgumentParser(description='View completed tasks - input parameters')
+    parser.add_argument('-tz', action='store', dest='current_timezone', default=s.DEFAULT_TIMEZONE)
+    parser.add_argument('-start', action='store', dest='start_date', default=default_start) 
+    parser.add_argument('-end', action='store', dest='end_date', default=default_end)
+    args = parser.parse_args()
+    return args
 
 # Set defaults 
 default_end = datetime.now()
 default_start = default_end - timedelta(days=7)
 
 # Use command line arguments
-args = mt.parse_commandline(default_start, default_end)
+args = parse_commandline(default_start, default_end)
 start_date = args.start_date 
 end_date = args.end_date 
 current_timezone = args.current_timezone
@@ -30,13 +39,16 @@ df_tasks = mt.convert_datetimes_to_tz(df_tasks, current_timezone, s.DATETIME_FOR
 df_completed_tasks = mt.filter_completed_tasks(df_tasks, start_date, end_date)
 
 # Sort tasks
-sort_columns = [s.PARENT_PROJECT, s.PROJECT_NAME, s.PARENT_PRIORITY, s.PARENT_ID, s.DATE_COMPLETED]
-sort_asc = [True,True,False,True,True]
+sort_columns = s.VIEW_COMPLETED_SORT 
+sort_asc = s.VIEW_COMPLETED_SORT_ASC 
 df_completed_tasks = mt.sort_dataframe(df_completed_tasks, sort_columns, sort_asc)
 
 # Print out tasks with specific columns
-print_columns = [s.PARENT_PROJECT, s.PROJECT_NAME, s.PARENT_PRIORITY,s.PARENT_TASK, s.PRIORITY, s.CONTENT, s.DATE_COMPLETED]
+print_columns = s.VIEW_COMPLETED_PRINT 
 print(df_completed_tasks[print_columns])
 
-# Save completed tasks to file
-mt.save_dataframe_to_csv(df_completed_tasks, s.DEFAULT_FILE_COMPLETED)
+# Save completed tasks to file - include start/end dates in the filename
+filename = mt.get_timestamped_filename(s.COMPLETED_TASKS_FILENAME,start_date,end_date,s.DATETIME_FORMAT,'.csv')
+filename = mt.get_user_filepath(s.DEFAULT_USER_FOLDER, filename)
+mt.save_dataframe_to_csv(df_completed_tasks[print_columns], filename)
+print('File saved to ' + filename)

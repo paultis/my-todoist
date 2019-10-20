@@ -5,18 +5,12 @@ import mystrings as s
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
-
-
-def parse_commandline(default_start, default_end):
-    parser = argparse.ArgumentParser(description='View completed tasks - input parameters')
-    parser.add_argument('-tz', action='store', dest='current_timezone', default=s.DEFAULT_TIMEZONE)
-    parser.add_argument('-start', action='store', dest='start_date', default=default_start) 
-    parser.add_argument('-end', action='store', dest='end_date', default=default_end)
-    args = parser.parse_args()
-    return args
+import os
 
 
 def initialize_todoist_api():
+    # Used an access token obtained from https://developer.todoist.com/appconsole.html 
+    # Stored this access token "access_token" in file config.py (not included in the repo)
     todoist_api = todoist.TodoistAPI(config.access_token)
     todoist_api.sync()
     return todoist_api
@@ -87,6 +81,22 @@ def sort_dataframe(df, columns, asc):
     return df
 
 
+def get_timestamped_filename(name, time1, time2, timeformat, suffix):
+    filename = name + '_' + time1.strftime(timeformat) + '_to_' + time2.strftime(timeformat) + suffix
+    return filename
+
+def get_user_folderpath(foldername):
+    home = os.path.expanduser('~')
+    folderpath = os.path.join(home,foldername)
+    return folderpath
+
+
+def get_user_filepath(foldername, filename):
+    folderpath = get_user_folderpath(foldername)
+    filepath = os.path.join(folderpath,filename)
+    return filepath
+
+
 def save_dataframe_to_csv(df, filename):
-    df.to_csv(s.DEFAULT_FILE_COMPLETED, index = False, encoding='utf8')
+    df.to_csv(filename, index = False, encoding='utf8')
 
